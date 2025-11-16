@@ -145,9 +145,6 @@ def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particl
 
                 rotated_outer = cv.warpAffine(outer_circle, M1, (outer_circle.shape[1], outer_circle.shape[0]))
                 rotated_inner = cv.warpAffine(inner_circle, M2, (inner_circle.shape[1], inner_circle.shape[0]))
-                
-                # Add subtle glow effect (no yellow!)
-                frame = add_glow_effect(frame, center_x, center_y, current_diameter // 2, (0, 180, 255), 0.15)
 
                 frame = overlay_image(rotated_outer, frame, current_x1, current_y1, (current_diameter, current_diameter))
                 frame = overlay_image(rotated_inner, frame, current_x1, current_y1, (current_diameter, current_diameter))
@@ -183,10 +180,6 @@ def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particl
     # Draw energy beam connecting two portals
     if len(portal_centers) == 2:
         frame = draw_energy_beam(frame, portal_centers[0], portal_centers[1])
-    
-    # Apply mirror dimension effect if both hands are showing portals
-    if active_portals >= 2:
-        frame = apply_mirror_dimension_effect(frame, 0.6)
     
     # Update and draw all energy discs
     energy_discs[:] = [disc for disc in energy_discs if disc.update()]
