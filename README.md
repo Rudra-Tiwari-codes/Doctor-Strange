@@ -16,6 +16,10 @@ This computer vision project leverages MediaPipe and OpenCV to detect hand landm
 - Real-time hand tracking and landmark detection
 - Dynamic palm openness calculation
 - Rotating magical circle overlays
+- **Particle effects system - Sparks and glowing particles around portals
+- **Portal opening animation** - Gradual expansion effect when palm opens
+- **Gesture detection** - Different effects for peace sign, fist, and pointing gestures
+- **Glowing aura effects** - Magical glow around active portals
 - Customizable visual effects through configuration
 - Multiple color schemes available
 
@@ -63,9 +67,18 @@ Run the application:
 python main.py
 ```
 
-- Position your hand in front of the camera
-- Open your palm fully to activate the magical circles
-- Press 'q' to quit
+**Interactive Controls:**
+- **Open Palm** - Activates portal with particle effects and glowing aura
+- **Peace Sign** ✌️ - Blue glowing energy lines with fingertip sparks
+- **Fist** ✊ - Red energy lines (power building effect)
+- **Pointing** ☝️ - Directional energy focus
+- **Press 'q'** - Quit application
+
+**Tips for Best Effects:**
+- Use good lighting for accurate hand tracking
+- Keep your hand within the camera frame
+- Move slowly for smooth portal animations
+- Try different hand gestures for varied magical effects
 
 ## Configuration
 
