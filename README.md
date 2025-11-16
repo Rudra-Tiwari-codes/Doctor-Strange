@@ -17,12 +17,14 @@ This computer vision project leverages MediaPipe and OpenCV to detect hand landm
 - Rotating magical circle overlays with professional rendering
 - **Particle System** - Elegant sparks that emit from portals and fingertips
 - **Portal Opening Animation** - Smooth expansion effect when palm opens
-- **Gesture Detection** - Different magical effects for various hand gestures
+- **Gesture Detection** - Throw energy discs by closing fist then opening palm quickly
 - **Energy Trails** - Motion trails that follow hand movement
 - **Runic Symbols** - Animated ancient symbols orbiting the portals
-- **Mirror Dimension** - Lightweight reality-bending distortion with both hands
+- **Mirror Dimension** - Kaleidoscope reality-bending with both hands active
 - **Energy Beams** - Connecting beam between two active portals
-- **Sound Effects** - Portal opening sounds (optional, requires pygame)
+- **Energy Disc Throwing** - Throw spinning energy discs like in the movie!
+- **Background Music** - Doctor Strange theme music (add to sounds folder)
+- **Sound Effects** - Portal and throwing sounds (optional)
 - **Subtle Glow Effects** - Professional Marvel-style orange/blue aura
 - Customizable visual effects through configuration
 - Multiple color schemes available
@@ -73,16 +75,17 @@ python main.py
 
 **Interactive Controls:**
 - **Open Palm** - Activates portal with particle effects and glowing aura
-- **Peace Sign** ✌️ - Blue glowing energy lines with fingertip sparks
-- **Fist** ✊ - Red energy lines (power building effect)
-- **Pointing** ☝️ - Directional energy focus
+- **Close Fist, Then Open Palm Quickly** ✊➡️✋ - Throw energy disc!
+- **Two Open Palms** - Energy beam + mirror dimension kaleidoscope effect
+- **Move Hands** - Energy trails follow your movement
 - **Press 'q'** - Quit application
 
 **Tips for Best Effects:**
 - Use good lighting for accurate hand tracking
 - Keep your hand within the camera frame
-- Move slowly for smooth portal animations
-- Try different hand gestures for varied magical effects
+- Practice the throw gesture: make a fist, then quickly open your palm forward
+- Try activating both portals simultaneously for the mirror dimension
+- Add Doctor Strange theme music to the `sounds/` folder for the full experience!
 
 ## Configuration
 

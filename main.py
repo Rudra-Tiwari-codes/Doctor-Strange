@@ -11,7 +11,7 @@ import json
 from functions import (position_data, calculate_distance, draw_line, overlay_image, 
                        ParticleSystem, add_glow_effect, detect_gesture, EnergyTrail,
                        RunicSymbol, apply_mirror_dimension_effect, draw_energy_beam,
-                       SoundManager)
+                       SoundManager, EnergyDisc)
 import numpy as np
 import math
 
@@ -48,7 +48,9 @@ def load_images(config: dict) -> tuple:
         raise FileNotFoundError("Failed to load one or more overlay images.")
     return inner_circle, outer_circle
 
-def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particle_system, portal_scales, energy_trails, runic_symbols, sound_manager):
+def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particle_system, 
+                  portal_scales, energy_trails, runic_symbols, sound_manager, energy_discs, 
+                  prev_gestures, throw_cooldown):
     """Processes the frame, applies overlays, and returns the updated frame."""
     h, w, _ = frame.shape
     rgb_frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
@@ -70,16 +72,35 @@ def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particl
             
             # Detect gesture for special effects
             gesture = detect_gesture(lm_list)
+            
+            # Initialize cooldown for new hands
+            if hand_idx not in throw_cooldown:
+                throw_cooldown[hand_idx] = 0
+            
+            # Detect throwing gesture - transition from fist to open palm
+            if hand_idx in prev_gestures:
+                if prev_gestures[hand_idx] == 'fist' and gesture == 'open' and throw_cooldown[hand_idx] <= 0:
+                    # Throw energy disc!
+                    # Calculate throw direction from wrist to middle finger
+                    dx = middle_tip[0] - wrist[0]
+                    dy = middle_tip[1] - wrist[1]
+                    distance = math.sqrt(dx**2 + dy**2)
+                    if distance > 0:
+                        vx = (dx / distance) * 15  # Speed of disc
+                        vy = (dy / distance) * 15
+                        energy_discs.append(EnergyDisc(middle_mcp[0], middle_mcp[1], vx, vy))
+                        sound_manager.play_throw()
+                        throw_cooldown[hand_idx] = 20  # Cooldown frames
+            
+            prev_gestures[hand_idx] = gesture
+            if throw_cooldown[hand_idx] > 0:
+                throw_cooldown[hand_idx] -= 1
 
             if 0.5 < ratio < 1.3:
                 fingers = [thumb_tip, index_tip, middle_tip, ring_tip, pinky_tip]
                 
-                # Enhanced line drawing with glow based on gesture
+                # Simple line drawing - consistent color
                 line_color = tuple(config["line_settings"]["color"])
-                if gesture == 'peace':
-                    line_color = (255, 140, 0)  # Orange for peace
-                elif gesture == 'fist':
-                    line_color = (0, 100, 255)  # Red for fist
                 
                 for finger in fingers:
                     frame = draw_line(frame, wrist, finger,
@@ -95,11 +116,6 @@ def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particl
                     energy_trails[hand_idx] = EnergyTrail()
                 energy_trails[hand_idx].add_point(middle_mcp)
                 energy_trails[hand_idx].draw(frame, line_color)
-                
-                # Emit particles at fingertips for dramatic effect
-                if gesture == 'peace':
-                    particle_system.emit(index_tip[0], index_tip[1], 2)
-                    particle_system.emit(middle_tip[0], middle_tip[1], 2)
 
             elif ratio >= 1.3:
                 active_portals += 1
@@ -168,9 +184,14 @@ def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particl
     if len(portal_centers) == 2:
         frame = draw_energy_beam(frame, portal_centers[0], portal_centers[1])
     
-    # Apply lightweight mirror dimension effect if both hands are showing portals
+    # Apply mirror dimension effect if both hands are showing portals
     if active_portals >= 2:
-        frame = apply_mirror_dimension_effect(frame, 0.3)
+        frame = apply_mirror_dimension_effect(frame, 0.6)
+    
+    # Update and draw all energy discs
+    energy_discs[:] = [disc for disc in energy_discs if disc.update()]
+    for disc in energy_discs:
+        disc.draw(frame)
     
     # Update and draw all particles
     particle_system.update(frame)
@@ -185,13 +206,19 @@ def main():
     hands = mp.solutions.hands.Hands()
     deg = 0
     
-    # Initialize particle system and portal animation tracking
+    # Initialize all tracking systems
     particle_system = ParticleSystem()
     portal_scales = {}
     energy_trails = {}
     runic_symbols = {}
     sound_manager = SoundManager()
     sound_manager.load_sounds()
+    sound_manager.play_music()  # Start background music
+    
+    # Disc throwing system
+    energy_discs = []
+    prev_gestures = {}
+    throw_cooldown = {}
 
     try:
         while cap.isOpened():
@@ -203,12 +230,14 @@ def main():
             frame = cv.flip(frame, 1)
             frame, deg = process_frame(frame, hands, config, inner_circle, outer_circle, 
                                       deg, particle_system, portal_scales, energy_trails, 
-                                      runic_symbols, sound_manager)
+                                      runic_symbols, sound_manager, energy_discs, 
+                                      prev_gestures, throw_cooldown)
 
             cv.imshow("Image", frame)
             if cv.waitKey(1) == ord(config["keybindings"]["quit_key"]):
                 break
     finally:
+        sound_manager.stop_music()
         cap.release()
         cv.destroyAllWindows()
 

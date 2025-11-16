@@ -27,11 +27,13 @@ class SoundManager:
     
     def __init__(self):
         self.enabled = SOUND_AVAILABLE
+        self.music_playing = False
         if self.enabled:
             try:
                 pygame.mixer.init()
                 self.portal_open_sound = None
                 self.gesture_sound = None
+                self.throw_sound = None
             except:
                 self.enabled = False
     
@@ -41,17 +43,46 @@ class SoundManager:
             return
         
         try:
-            # Try to load sounds if they exist
-            # Users can add their own sound files
-            pass
+            # Try to load sounds if they exist in sounds folder
+            # Users can add: portal_open.wav, gesture.wav, throw.wav, doctor_strange_theme.mp3
+            import os
+            if os.path.exists("sounds/doctor_strange_theme.mp3"):
+                pygame.mixer.music.load("sounds/doctor_strange_theme.mp3")
+                pygame.mixer.music.set_volume(0.3)
         except:
             pass
+    
+    def play_music(self):
+        """Play background music on loop."""
+        if self.enabled and not self.music_playing:
+            try:
+                pygame.mixer.music.play(-1)  # Loop indefinitely
+                self.music_playing = True
+            except:
+                pass
+    
+    def stop_music(self):
+        """Stop background music."""
+        if self.enabled and self.music_playing:
+            try:
+                pygame.mixer.music.stop()
+                self.music_playing = False
+            except:
+                pass
     
     def play_portal_open(self):
         """Play portal opening sound."""
         if self.enabled and self.portal_open_sound:
             try:
                 self.portal_open_sound.play()
+            except:
+                pass
+    
+    def play_throw(self):
+        """Play disc throw sound effect."""
+        if self.enabled and self.throw_sound:
+            try:
+                self.throw_sound.play()
             except:
                 pass
     
@@ -180,9 +211,9 @@ class RunicSymbol:
                   cv.FONT_HERSHEY_COMPLEX, 0.8, (255, 255, 255), 1, cv.LINE_AA)
 
 
-def apply_mirror_dimension_effect(frame: np.ndarray, intensity: float = 0.3) -> np.ndarray:
+def apply_mirror_dimension_effect(frame: np.ndarray, intensity: float = 0.5) -> np.ndarray:
     """
-    Apply a lightweight reality-bending mirror dimension effect.
+    Apply a reality-bending mirror dimension effect with kaleidoscope.
     
     Args:
         frame: Input frame
@@ -193,28 +224,87 @@ def apply_mirror_dimension_effect(frame: np.ndarray, intensity: float = 0.3) -> 
     """
     h, w = frame.shape[:2]
     
-    # Lightweight kaleidoscope effect using flip operations
-    center_x, center_y = w // 2, h // 2
-    
-    # Create overlay for blending
+    # Create kaleidoscope effect by mirroring sections
     overlay = frame.copy()
     
-    # Apply simple geometric transformations for speed
-    # Mirror quadrants with reduced opacity
-    quad_h, quad_w = h // 4, w // 4
+    # Divide into quadrants and create symmetry
+    half_h, half_w = h // 2, w // 2
     
-    # Top-left mirrored to other quadrants with low opacity
-    section = cv.resize(frame[0:quad_h, 0:quad_w], (quad_w, quad_h))
-    alpha = intensity * 0.15
+    # Mirror each quadrant to create kaleidoscope effect
+    if half_h > 0 and half_w > 0:
+        # Top-left to top-right
+        overlay[0:half_h, half_w:w] = cv.flip(overlay[0:half_h, 0:half_w], 1)
+        # Top half to bottom half
+        overlay[half_h:h, :] = cv.flip(overlay[0:half_h, :], 0)
     
-    # Blend mirrored sections subtly
-    if quad_h > 0 and quad_w > 0:
-        overlay[0:quad_h, w-quad_w:w] = cv.addWeighted(
-            overlay[0:quad_h, w-quad_w:w], 1-alpha, 
-            cv.flip(section, 1), alpha, 0
-        )
+    # Blend with original for intensity control
+    result = cv.addWeighted(frame, 1 - intensity * 0.4, overlay, intensity * 0.4, 0)
     
-    return overlay
+    # Add color tint for mystical effect
+    tint = np.zeros_like(result)
+    tint[:, :] = (100, 50, 0)  # Blue/purple tint
+    result = cv.addWeighted(result, 0.9, tint, 0.1, 0)
+    
+    return result
+
+
+class EnergyDisc:
+    """Represents a thrown energy disc that moves across the screen."""
+    
+    def __init__(self, start_x: int, start_y: int, velocity_x: float, velocity_y: float, size: int = 80):
+        self.x = start_x
+        self.y = start_y
+        self.vx = velocity_x
+        self.vy = velocity_y
+        self.size = size
+        self.rotation = 0
+        self.life = 1.0
+        self.age = 0
+    
+    def update(self):
+        """Update disc position and state."""
+        self.x += self.vx
+        self.y += self.vy
+        self.rotation += 15
+        self.age += 1
+        
+        # Fade out over time
+        if self.age > 30:
+            self.life -= 0.05
+        
+        return self.life > 0 and self.x > -100 and self.x < 2000 and self.y > -100 and self.y < 2000
+    
+    def draw(self, frame: np.ndarray):
+        """Draw the energy disc on the frame."""
+        if self.life <= 0:
+            return
+        
+        h, w = frame.shape[:2]
+        
+        # Draw spinning disc with multiple layers
+        center = (int(self.x), int(self.y))
+        
+        # Outer glow
+        for i in range(3, 0, -1):
+            alpha = self.life * 0.3 * i
+            radius = int(self.size * (1 + i * 0.2) * self.life)
+            color = (0, int(150 * alpha), int(255 * alpha))
+            cv.circle(frame, center, radius, color, -1)
+        
+        # Main disc body
+        radius = int(self.size * self.life)
+        cv.circle(frame, center, radius, (0, 200, 255), -1)
+        cv.circle(frame, center, int(radius * 0.7), (100, 230, 255), -1)
+        cv.circle(frame, center, int(radius * 0.4), (255, 255, 255), -1)
+        
+        # Rotating runes/lines
+        for angle in range(0, 360, 45):
+            rad = np.radians(angle + self.rotation)
+            x1 = int(self.x + radius * 0.3 * np.cos(rad))
+            y1 = int(self.y + radius * 0.3 * np.sin(rad))
+            x2 = int(self.x + radius * 0.8 * np.cos(rad))
+            y2 = int(self.y + radius * 0.8 * np.sin(rad))
+            cv.line(frame, (x1, y1), (x2, y2), (255, 255, 255), 2, cv.LINE_AA)
 
 
 def draw_energy_beam(frame: np.ndarray, point1: Tuple[int, int], point2: Tuple[int, int], 
