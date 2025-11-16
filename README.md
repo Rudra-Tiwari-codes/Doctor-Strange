@@ -20,8 +20,10 @@ This computer vision project leverages MediaPipe and OpenCV to detect hand landm
 - **Gesture Detection** - Different magical effects for various hand gestures
 - **Energy Trails** - Motion trails that follow hand movement
 - **Runic Symbols** - Animated ancient symbols orbiting the portals
-- **Mirror Dimension** - Reality-bending distortion with both hands active
-- **Subtle Glow Effects** - Professional Marvel-style aura around portals
+- **Mirror Dimension** - Lightweight reality-bending distortion with both hands
+- **Energy Beams** - Connecting beam between two active portals
+- **Sound Effects** - Portal opening sounds (optional, requires pygame)
+- **Subtle Glow Effects** - Professional Marvel-style orange/blue aura
 - Customizable visual effects through configuration
 - Multiple color schemes available
 

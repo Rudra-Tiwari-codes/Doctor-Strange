@@ -10,7 +10,8 @@ import mediapipe as mp
 import json
 from functions import (position_data, calculate_distance, draw_line, overlay_image, 
                        ParticleSystem, add_glow_effect, detect_gesture, EnergyTrail,
-                       RunicSymbol, apply_mirror_dimension_effect)
+                       RunicSymbol, apply_mirror_dimension_effect, draw_energy_beam,
+                       SoundManager)
 import numpy as np
 import math
 
@@ -47,13 +48,14 @@ def load_images(config: dict) -> tuple:
         raise FileNotFoundError("Failed to load one or more overlay images.")
     return inner_circle, outer_circle
 
-def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particle_system, portal_scales, energy_trails, runic_symbols):
+def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particle_system, portal_scales, energy_trails, runic_symbols, sound_manager):
     """Processes the frame, applies overlays, and returns the updated frame."""
     h, w, _ = frame.shape
     rgb_frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
     results = hands.process(rgb_frame)
     
     active_portals = 0
+    portal_centers = []
 
     if results.multi_hand_landmarks:
         for hand_idx, hand_landmarks in enumerate(results.multi_hand_landmarks):
@@ -102,6 +104,8 @@ def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particl
             elif ratio >= 1.3:
                 active_portals += 1
                 center_x, center_y = middle_mcp
+                portal_centers.append((center_x, center_y))
+                
                 diameter = round(index_wrist_distance * config["overlay"]["shield_size_multiplier"])
 
                 x1 = limit_value(center_x - diameter // 2, 0, w)
@@ -112,6 +116,7 @@ def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particl
                 target_scale = 1.0
                 if hand_idx not in portal_scales:
                     portal_scales[hand_idx] = 0.3
+                    sound_manager.play_portal_open()
                 
                 portal_scales[hand_idx] = min(portal_scales[hand_idx] + 0.05, target_scale)
                 current_diameter = int(diameter * portal_scales[hand_idx])
@@ -125,8 +130,8 @@ def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particl
                 rotated_outer = cv.warpAffine(outer_circle, M1, (outer_circle.shape[1], outer_circle.shape[0]))
                 rotated_inner = cv.warpAffine(inner_circle, M2, (inner_circle.shape[1], inner_circle.shape[0]))
                 
-                # Add subtle glow effect (much more subtle now)
-                frame = add_glow_effect(frame, center_x, center_y, current_diameter // 2, (0, 180, 255), 0.2)
+                # Add subtle glow effect (no yellow!)
+                frame = add_glow_effect(frame, center_x, center_y, current_diameter // 2, (0, 180, 255), 0.15)
 
                 frame = overlay_image(rotated_outer, frame, current_x1, current_y1, (current_diameter, current_diameter))
                 frame = overlay_image(rotated_inner, frame, current_x1, current_y1, (current_diameter, current_diameter))
@@ -147,7 +152,7 @@ def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particl
                     symbol.draw(frame)
                 
                 # Emit fewer particles for cleaner look
-                for angle in range(0, 360, 60):
+                for angle in range(0, 360, 90):
                     rad = np.radians(angle)
                     px = int(center_x + (current_diameter // 2) * np.cos(rad))
                     py = int(center_y + (current_diameter // 2) * np.sin(rad))
@@ -159,9 +164,13 @@ def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particl
                 energy_trails[hand_idx].add_point(middle_mcp)
                 energy_trails[hand_idx].draw(frame)
     
-    # Apply mirror dimension effect if both hands are showing portals
+    # Draw energy beam connecting two portals
+    if len(portal_centers) == 2:
+        frame = draw_energy_beam(frame, portal_centers[0], portal_centers[1])
+    
+    # Apply lightweight mirror dimension effect if both hands are showing portals
     if active_portals >= 2:
-        frame = apply_mirror_dimension_effect(frame, 0.4)
+        frame = apply_mirror_dimension_effect(frame, 0.3)
     
     # Update and draw all particles
     particle_system.update(frame)
@@ -181,6 +190,8 @@ def main():
     portal_scales = {}
     energy_trails = {}
     runic_symbols = {}
+    sound_manager = SoundManager()
+    sound_manager.load_sounds()
 
     try:
         while cap.isOpened():
@@ -191,7 +202,8 @@ def main():
 
             frame = cv.flip(frame, 1)
             frame, deg = process_frame(frame, hands, config, inner_circle, outer_circle, 
-                                      deg, particle_system, portal_scales, energy_trails, runic_symbols)
+                                      deg, particle_system, portal_scales, energy_trails, 
+                                      runic_symbols, sound_manager)
 
             cv.imshow("Image", frame)
             if cv.waitKey(1) == ord(config["keybindings"]["quit_key"]):

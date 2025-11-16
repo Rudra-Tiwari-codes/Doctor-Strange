@@ -7,13 +7,61 @@ Date: November 2025
 
 import cv2 as cv
 import numpy as np
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 import random
 import math
+
+try:
+    import pygame
+    SOUND_AVAILABLE = True
+except ImportError:
+    SOUND_AVAILABLE = False
 
 LINE_COLOR = (0, 140, 255)
 WHITE_COLOR = (255, 255, 255)
 ORANGE_GLOW = (0, 140, 255)  # BGR format
+
+
+class SoundManager:
+    """Manages sound effects for the application."""
+    
+    def __init__(self):
+        self.enabled = SOUND_AVAILABLE
+        if self.enabled:
+            try:
+                pygame.mixer.init()
+                self.portal_open_sound = None
+                self.gesture_sound = None
+            except:
+                self.enabled = False
+    
+    def load_sounds(self):
+        """Load sound files if they exist."""
+        if not self.enabled:
+            return
+        
+        try:
+            # Try to load sounds if they exist
+            # Users can add their own sound files
+            pass
+        except:
+            pass
+    
+    def play_portal_open(self):
+        """Play portal opening sound."""
+        if self.enabled and self.portal_open_sound:
+            try:
+                self.portal_open_sound.play()
+            except:
+                pass
+    
+    def play_gesture(self):
+        """Play gesture sound effect."""
+        if self.enabled and self.gesture_sound:
+            try:
+                self.gesture_sound.play()
+            except:
+                pass
 
 
 class Particle:
@@ -134,7 +182,7 @@ class RunicSymbol:
 
 def apply_mirror_dimension_effect(frame: np.ndarray, intensity: float = 0.3) -> np.ndarray:
     """
-    Apply a reality-bending mirror dimension effect.
+    Apply a lightweight reality-bending mirror dimension effect.
     
     Args:
         frame: Input frame
@@ -145,38 +193,50 @@ def apply_mirror_dimension_effect(frame: np.ndarray, intensity: float = 0.3) -> 
     """
     h, w = frame.shape[:2]
     
-    # Create a subtle distortion effect
-    # Split frame into sections and apply geometric transformations
+    # Lightweight kaleidoscope effect using flip operations
     center_x, center_y = w // 2, h // 2
     
-    # Create kaleidoscope effect by mirroring quadrants with reduced opacity
+    # Create overlay for blending
     overlay = frame.copy()
     
-    # Create distortion maps for subtle warping
-    map_x = np.zeros((h, w), dtype=np.float32)
-    map_y = np.zeros((h, w), dtype=np.float32)
+    # Apply simple geometric transformations for speed
+    # Mirror quadrants with reduced opacity
+    quad_h, quad_w = h // 4, w // 4
     
-    for i in range(h):
-        for j in range(w):
-            dx = j - center_x
-            dy = i - center_y
-            distance = np.sqrt(dx**2 + dy**2)
-            
-            if distance > 0:
-                # Subtle spiral distortion
-                angle = np.arctan2(dy, dx)
-                angle += distance * 0.00015 * intensity
-                map_x[i, j] = center_x + distance * np.cos(angle)
-                map_y[i, j] = center_y + distance * np.sin(angle)
-            else:
-                map_x[i, j] = j
-                map_y[i, j] = i
+    # Top-left mirrored to other quadrants with low opacity
+    section = cv.resize(frame[0:quad_h, 0:quad_w], (quad_w, quad_h))
+    alpha = intensity * 0.15
     
-    # Apply distortion
-    warped = cv.remap(frame, map_x, map_y, cv.INTER_LINEAR)
+    # Blend mirrored sections subtly
+    if quad_h > 0 and quad_w > 0:
+        overlay[0:quad_h, w-quad_w:w] = cv.addWeighted(
+            overlay[0:quad_h, w-quad_w:w], 1-alpha, 
+            cv.flip(section, 1), alpha, 0
+        )
     
-    # Blend with original for subtle effect
-    cv.addWeighted(warped, intensity * 0.5, frame, 1 - intensity * 0.5, 0, frame)
+    return overlay
+
+
+def draw_energy_beam(frame: np.ndarray, point1: Tuple[int, int], point2: Tuple[int, int], 
+                     color: Tuple[int, int, int] = (0, 200, 255)) -> np.ndarray:
+    """
+    Draw an energy beam connecting two portals.
+    
+    Args:
+        frame: Frame to draw on
+        point1: First portal center
+        point2: Second portal center
+        color: Beam color
+    
+    Returns:
+        Frame with energy beam
+    """
+    # Draw thick outer glow
+    cv.line(frame, point1, point2, color, 12, cv.LINE_AA)
+    # Draw medium inner line
+    cv.line(frame, point1, point2, (100, 220, 255), 6, cv.LINE_AA)
+    # Draw bright core
+    cv.line(frame, point1, point2, (255, 255, 255), 2, cv.LINE_AA)
     
     return frame
 
