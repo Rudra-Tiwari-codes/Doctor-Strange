@@ -8,9 +8,66 @@ Date: November 2025
 import cv2 as cv
 import numpy as np
 from typing import List, Tuple
+import random
+import math
 
 LINE_COLOR = (0, 140, 255)
 WHITE_COLOR = (255, 255, 255)
+ORANGE_GLOW = (0, 140, 255)  # BGR format
+
+
+class Particle:
+    """Represents a single magical particle/spark."""
+    
+    def __init__(self, x: int, y: int, vx: float, vy: float):
+        self.x = x
+        self.y = y
+        self.vx = vx
+        self.vy = vy
+        self.life = 1.0
+        self.size = random.randint(2, 6)
+        self.color = (
+            random.randint(0, 100),
+            random.randint(100, 200),
+            random.randint(200, 255)
+        )
+    
+    def update(self):
+        """Update particle position and life."""
+        self.x += self.vx
+        self.y += self.vy
+        self.life -= 0.02
+        self.vy += 0.3  # Gravity effect
+        return self.life > 0
+    
+    def draw(self, frame: np.ndarray):
+        """Draw the particle on the frame."""
+        if self.life > 0:
+            alpha = int(self.life * 255)
+            size = int(self.size * self.life)
+            cv.circle(frame, (int(self.x), int(self.y)), size, self.color, -1)
+
+
+class ParticleSystem:
+    """Manages multiple particles for magical effects."""
+    
+    def __init__(self):
+        self.particles = []
+    
+    def emit(self, x: int, y: int, count: int = 5):
+        """Emit particles from a specific position."""
+        for _ in range(count):
+            angle = random.uniform(0, 2 * math.pi)
+            speed = random.uniform(1, 4)
+            vx = math.cos(angle) * speed
+            vy = math.sin(angle) * speed
+            self.particles.append(Particle(x, y, vx, vy))
+    
+    def update(self, frame: np.ndarray):
+        """Update and draw all particles."""
+        self.particles = [p for p in self.particles if p.update()]
+        for particle in self.particles:
+            particle.draw(frame)
 
 def position_data(lmlist: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
     """
@@ -66,6 +123,73 @@ def draw_line(
     cv.line(frame, p1, p2, color, thickness)
     cv.line(frame, p1, p2, WHITE_COLOR, max(1, thickness // 2))
     return frame
+
+
+def add_glow_effect(frame: np.ndarray, x: int, y: int, radius: int, color: Tuple[int, int, int]) -> np.ndarray:
+    """
+    Add a glowing aura effect around a point.
+    
+    Args:
+        frame: The image/frame to add glow to
+        x: X-coordinate of glow center
+        y: Y-coordinate of glow center
+        radius: Radius of the glow effect
+        color: BGR color tuple for the glow
+    
+    Returns:
+        Modified frame with glow effect
+    """
+    overlay = frame.copy()
+    
+    # Create multiple layers of decreasing opacity for smooth glow
+    for i in range(5, 0, -1):
+        alpha = 0.05 * i
+        glow_radius = int(radius * (1 + i * 0.1))
+        cv.circle(overlay, (x, y), glow_radius, color, -1)
+    
+    # Blend with original frame
+    cv.addWeighted(overlay, 0.4, frame, 0.6, 0, frame)
+    return frame
+
+
+def detect_gesture(lmlist: List[Tuple[int, int]]) -> str:
+    """
+    Detect specific hand gestures for different magical effects.
+    
+    Args:
+        lmlist: List of hand landmark coordinates
+    
+    Returns:
+        String representing detected gesture ('fist', 'peace', 'open', 'point', 'none')
+    """
+    if len(lmlist) < 21:
+        return 'none'
+    
+    # Calculate finger states (extended or closed)
+    fingers_up = []
+    
+    # Thumb
+    if lmlist[4][0] > lmlist[3][0]:  # Right hand
+        fingers_up.append(lmlist[4][0] > lmlist[2][0])
+    else:  # Left hand
+        fingers_up.append(lmlist[4][0] < lmlist[2][0])
+    
+    # Other fingers
+    for finger_tip, finger_pip in [(8, 6), (12, 10), (16, 14), (20, 18)]:
+        fingers_up.append(lmlist[finger_tip][1] < lmlist[finger_pip][1])
+    
+    # Gesture detection
+    if sum(fingers_up) == 0:
+        return 'fist'
+    elif fingers_up == [False, True, True, False, False]:
+        return 'peace'
+    elif sum(fingers_up) >= 4:
+        return 'open'
+    elif fingers_up == [False, True, False, False, False]:
+        return 'point'
+    
+    return 'partial'
+
 
 def overlay_image(
     target_img: np.ndarray,
