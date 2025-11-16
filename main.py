@@ -9,8 +9,10 @@ import cv2 as cv
 import mediapipe as mp
 import json
 from functions import (position_data, calculate_distance, draw_line, overlay_image, 
-                       ParticleSystem, add_glow_effect, detect_gesture)
+                       ParticleSystem, add_glow_effect, detect_gesture, EnergyTrail,
+                       RunicSymbol, apply_mirror_dimension_effect)
 import numpy as np
+import math
 
 def load_config(path: str = "config.json") -> dict:
     """Loads the configuration from a JSON file.
@@ -45,11 +47,13 @@ def load_images(config: dict) -> tuple:
         raise FileNotFoundError("Failed to load one or more overlay images.")
     return inner_circle, outer_circle
 
-def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particle_system, portal_scales):
+def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particle_system, portal_scales, energy_trails, runic_symbols):
     """Processes the frame, applies overlays, and returns the updated frame."""
     h, w, _ = frame.shape
     rgb_frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
     results = hands.process(rgb_frame)
+    
+    active_portals = 0
 
     if results.multi_hand_landmarks:
         for hand_idx, hand_landmarks in enumerate(results.multi_hand_landmarks):
@@ -71,9 +75,9 @@ def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particl
                 # Enhanced line drawing with glow based on gesture
                 line_color = tuple(config["line_settings"]["color"])
                 if gesture == 'peace':
-                    line_color = (255, 100, 0)  # Blue glow for peace sign
+                    line_color = (255, 140, 0)  # Orange for peace
                 elif gesture == 'fist':
-                    line_color = (0, 0, 255)  # Red glow for fist
+                    line_color = (0, 100, 255)  # Red for fist
                 
                 for finger in fingers:
                     frame = draw_line(frame, wrist, finger,
@@ -84,12 +88,19 @@ def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particl
                                       color=line_color,
                                       thickness=config["line_settings"]["thickness"])
                 
+                # Add energy trail for movement
+                if hand_idx not in energy_trails:
+                    energy_trails[hand_idx] = EnergyTrail()
+                energy_trails[hand_idx].add_point(middle_mcp)
+                energy_trails[hand_idx].draw(frame, line_color)
+                
                 # Emit particles at fingertips for dramatic effect
                 if gesture == 'peace':
-                    particle_system.emit(index_tip[0], index_tip[1], 3)
-                    particle_system.emit(middle_tip[0], middle_tip[1], 3)
+                    particle_system.emit(index_tip[0], index_tip[1], 2)
+                    particle_system.emit(middle_tip[0], middle_tip[1], 2)
 
             elif ratio >= 1.3:
+                active_portals += 1
                 center_x, center_y = middle_mcp
                 diameter = round(index_wrist_distance * config["overlay"]["shield_size_multiplier"])
 
@@ -114,18 +125,43 @@ def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particl
                 rotated_outer = cv.warpAffine(outer_circle, M1, (outer_circle.shape[1], outer_circle.shape[0]))
                 rotated_inner = cv.warpAffine(inner_circle, M2, (inner_circle.shape[1], inner_circle.shape[0]))
                 
-                # Add glow effect around portal
-                frame = add_glow_effect(frame, center_x, center_y, current_diameter // 2, (0, 165, 255))
+                # Add subtle glow effect (much more subtle now)
+                frame = add_glow_effect(frame, center_x, center_y, current_diameter // 2, (0, 180, 255), 0.2)
 
                 frame = overlay_image(rotated_outer, frame, current_x1, current_y1, (current_diameter, current_diameter))
                 frame = overlay_image(rotated_inner, frame, current_x1, current_y1, (current_diameter, current_diameter))
                 
-                # Emit particles around the portal edge
-                for angle in range(0, 360, 30):
+                # Create or update runic symbols for this portal
+                if hand_idx not in runic_symbols:
+                    runic_symbols[hand_idx] = [
+                        RunicSymbol(center_x, center_y, current_diameter // 2 + 20, i * math.pi / 3)
+                        for i in range(6)
+                    ]
+                
+                # Update and draw runic symbols
+                for symbol in runic_symbols[hand_idx]:
+                    symbol.center_x = center_x
+                    symbol.center_y = center_y
+                    symbol.radius = current_diameter // 2 + 20
+                    symbol.update()
+                    symbol.draw(frame)
+                
+                # Emit fewer particles for cleaner look
+                for angle in range(0, 360, 60):
                     rad = np.radians(angle)
                     px = int(center_x + (current_diameter // 2) * np.cos(rad))
                     py = int(center_y + (current_diameter // 2) * np.sin(rad))
-                    particle_system.emit(px, py, 2)
+                    particle_system.emit(px, py, 1)
+                
+                # Add energy trail
+                if hand_idx not in energy_trails:
+                    energy_trails[hand_idx] = EnergyTrail()
+                energy_trails[hand_idx].add_point(middle_mcp)
+                energy_trails[hand_idx].draw(frame)
+    
+    # Apply mirror dimension effect if both hands are showing portals
+    if active_portals >= 2:
+        frame = apply_mirror_dimension_effect(frame, 0.4)
     
     # Update and draw all particles
     particle_system.update(frame)
@@ -143,6 +179,8 @@ def main():
     # Initialize particle system and portal animation tracking
     particle_system = ParticleSystem()
     portal_scales = {}
+    energy_trails = {}
+    runic_symbols = {}
 
     try:
         while cap.isOpened():
@@ -152,7 +190,8 @@ def main():
                 break
 
             frame = cv.flip(frame, 1)
-            frame, deg = process_frame(frame, hands, config, inner_circle, outer_circle, deg, particle_system, portal_scales)
+            frame, deg = process_frame(frame, hands, config, inner_circle, outer_circle, 
+                                      deg, particle_system, portal_scales, energy_trails, runic_symbols)
 
             cv.imshow("Image", frame)
             if cv.waitKey(1) == ord(config["keybindings"]["quit_key"]):

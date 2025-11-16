@@ -3,8 +3,8 @@
 A real-time augmented reality filter that creates magical circles on your palms using computer vision, inspired by Marvel's Doctor Strange.
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/f9c8e8b5-3c4a-4f2e-9b8e-8d3e9a2b1c0d" width="45%" />
-  <img src="https://github.com/user-attachments/assets/a7b6c5d4-2e3f-4g5h-6i7j-8k9l0m1n2o3p" width="45%" />
+  <img src="assets/doctor_strange_1.jpg" width="45%" alt="Doctor Strange Effect 1" />
+  <img src="assets/doctor_strange_2.jpg" width="45%" alt="Doctor Strange Effect 2" />
 </p>
 
 ## Overview
@@ -15,11 +15,14 @@ This computer vision project leverages MediaPipe and OpenCV to detect hand landm
 
 - Real-time hand tracking and landmark detection
 - Dynamic palm openness calculation
-- Rotating magical circle overlays
-- **Particle effects system - Sparks and glowing particles around portals
-- **Portal opening animation** - Gradual expansion effect when palm opens
-- **Gesture detection** - Different effects for peace sign, fist, and pointing gestures
-- **Glowing aura effects** - Magical glow around active portals
+- Rotating magical circle overlays with professional rendering
+- **Particle System** - Elegant sparks that emit from portals and fingertips
+- **Portal Opening Animation** - Smooth expansion effect when palm opens
+- **Gesture Detection** - Different magical effects for various hand gestures
+- **Energy Trails** - Motion trails that follow hand movement
+- **Runic Symbols** - Animated ancient symbols orbiting the portals
+- **Mirror Dimension** - Reality-bending distortion with both hands active
+- **Subtle Glow Effects** - Professional Marvel-style aura around portals
 - Customizable visual effects through configuration
 - Multiple color schemes available
 

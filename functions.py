@@ -69,6 +69,117 @@ class ParticleSystem:
         for particle in self.particles:
             particle.draw(frame)
 
+
+class EnergyTrail:
+    """Creates energy trails that follow hand movement."""
+    
+    def __init__(self, max_points: int = 20):
+        self.trail_points = []
+        self.max_points = max_points
+    
+    def add_point(self, point: Tuple[int, int]):
+        """Add a new point to the trail."""
+        self.trail_points.append(point)
+        if len(self.trail_points) > self.max_points:
+            self.trail_points.pop(0)
+    
+    def draw(self, frame: np.ndarray, color: Tuple[int, int, int] = (0, 200, 255)):
+        """Draw the energy trail with fading effect."""
+        if len(self.trail_points) < 2:
+            return
+        
+        for i in range(1, len(self.trail_points)):
+            # Calculate alpha based on position in trail
+            alpha = i / len(self.trail_points)
+            thickness = int(3 + alpha * 5)
+            
+            # Draw line segment with glow
+            cv.line(frame, self.trail_points[i-1], self.trail_points[i], 
+                   color, thickness, cv.LINE_AA)
+            # Inner bright line
+            cv.line(frame, self.trail_points[i-1], self.trail_points[i], 
+                   (255, 255, 255), max(1, thickness // 2), cv.LINE_AA)
+    
+    def clear(self):
+        """Clear the trail."""
+        self.trail_points = []
+
+
+class RunicSymbol:
+    """Animated runic symbols that orbit around portals."""
+    
+    def __init__(self, center_x: int, center_y: int, radius: int, angle_offset: float):
+        self.center_x = center_x
+        self.center_y = center_y
+        self.radius = radius
+        self.angle = angle_offset
+        self.rotation_speed = 0.05
+        self.symbol_char = random.choice(['ᚠ', 'ᚢ', 'ᚦ', 'ᚨ', 'ᚱ', 'ᚲ', 'ᚷ', 'ᚹ'])
+    
+    def update(self):
+        """Update symbol position."""
+        self.angle += self.rotation_speed
+    
+    def draw(self, frame: np.ndarray, color: Tuple[int, int, int] = (0, 180, 255)):
+        """Draw the runic symbol."""
+        x = int(self.center_x + self.radius * math.cos(self.angle))
+        y = int(self.center_y + self.radius * math.sin(self.angle))
+        
+        # Draw symbol with glow effect
+        cv.putText(frame, self.symbol_char, (x-10, y+10), 
+                  cv.FONT_HERSHEY_COMPLEX, 0.8, color, 2, cv.LINE_AA)
+        cv.putText(frame, self.symbol_char, (x-10, y+10), 
+                  cv.FONT_HERSHEY_COMPLEX, 0.8, (255, 255, 255), 1, cv.LINE_AA)
+
+
+def apply_mirror_dimension_effect(frame: np.ndarray, intensity: float = 0.3) -> np.ndarray:
+    """
+    Apply a reality-bending mirror dimension effect.
+    
+    Args:
+        frame: Input frame
+        intensity: Effect intensity (0.0 to 1.0)
+    
+    Returns:
+        Frame with mirror dimension effect applied
+    """
+    h, w = frame.shape[:2]
+    
+    # Create a subtle distortion effect
+    # Split frame into sections and apply geometric transformations
+    center_x, center_y = w // 2, h // 2
+    
+    # Create kaleidoscope effect by mirroring quadrants with reduced opacity
+    overlay = frame.copy()
+    
+    # Create distortion maps for subtle warping
+    map_x = np.zeros((h, w), dtype=np.float32)
+    map_y = np.zeros((h, w), dtype=np.float32)
+    
+    for i in range(h):
+        for j in range(w):
+            dx = j - center_x
+            dy = i - center_y
+            distance = np.sqrt(dx**2 + dy**2)
+            
+            if distance > 0:
+                # Subtle spiral distortion
+                angle = np.arctan2(dy, dx)
+                angle += distance * 0.00015 * intensity
+                map_x[i, j] = center_x + distance * np.cos(angle)
+                map_y[i, j] = center_y + distance * np.sin(angle)
+            else:
+                map_x[i, j] = j
+                map_y[i, j] = i
+    
+    # Apply distortion
+    warped = cv.remap(frame, map_x, map_y, cv.INTER_LINEAR)
+    
+    # Blend with original for subtle effect
+    cv.addWeighted(warped, intensity * 0.5, frame, 1 - intensity * 0.5, 0, frame)
+    
+    return frame
+
 def position_data(lmlist: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
     """
     Extracts and returns key fingertip and hand positions from the landmark list.
@@ -125,9 +236,9 @@ def draw_line(
     return frame
 
 
-def add_glow_effect(frame: np.ndarray, x: int, y: int, radius: int, color: Tuple[int, int, int]) -> np.ndarray:
+def add_glow_effect(frame: np.ndarray, x: int, y: int, radius: int, color: Tuple[int, int, int], intensity: float = 0.3) -> np.ndarray:
     """
-    Add a glowing aura effect around a point.
+    Add a subtle glowing aura effect around a point (Marvel-style).
     
     Args:
         frame: The image/frame to add glow to
@@ -135,20 +246,21 @@ def add_glow_effect(frame: np.ndarray, x: int, y: int, radius: int, color: Tuple
         y: Y-coordinate of glow center
         radius: Radius of the glow effect
         color: BGR color tuple for the glow
+        intensity: Glow intensity (0.0 to 1.0)
     
     Returns:
         Modified frame with glow effect
     """
     overlay = frame.copy()
     
-    # Create multiple layers of decreasing opacity for smooth glow
-    for i in range(5, 0, -1):
-        alpha = 0.05 * i
-        glow_radius = int(radius * (1 + i * 0.1))
+    # Create subtle multi-layer glow for professional look
+    for i in range(3, 0, -1):
+        alpha = intensity * 0.15 * i
+        glow_radius = int(radius * (1 + i * 0.08))
         cv.circle(overlay, (x, y), glow_radius, color, -1)
     
-    # Blend with original frame
-    cv.addWeighted(overlay, 0.4, frame, 0.6, 0, frame)
+    # Blend with original frame for subtle effect
+    cv.addWeighted(overlay, 0.25, frame, 0.75, 0, frame)
     return frame
 
 
@@ -225,10 +337,16 @@ def overlay_image(
     mask = cv.medianBlur(a, 5)
 
     h, w, _ = overlay_color.shape
-    if y + h > frame.shape[0] or x + w > frame.shape[1]:
-        raise ValueError("Overlay exceeds frame boundaries.")
+    
+    # Ensure coordinates are valid
+    if y < 0 or x < 0 or y + h > frame.shape[0] or x + w > frame.shape[1]:
+        return frame  # Skip overlay if out of bounds
 
     roi = frame[y:y + h, x:x + w]
+    
+    # Ensure mask dimensions match ROI
+    if roi.shape[0] != mask.shape[0] or roi.shape[1] != mask.shape[1]:
+        return frame  # Skip if dimensions don't match
 
     # Create background and foreground masks
     img1_bg = cv.bitwise_and(roi, roi, mask=cv.bitwise_not(mask))
