@@ -2,7 +2,10 @@
 
 A real-time augmented reality filter that creates magical circles on your palms using computer vision, inspired by Marvel's Doctor Strange.
 
-## Overview
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/f9c8e8b5-3c4a-4f2e-9b8e-8d3e9a2b1c0d" width="45%" />
+  <img src="https://github.com/user-attachments/assets/a7b6c5d4-2e3f-4g5h-6i7j-8k9l0m1n2o3p" width="45%" />
+</p>
 
 ## Overview
 
