@@ -3,7 +3,6 @@
 A real-time augmented reality filter that creates magical circles on your palms using computer vision, inspired by Marvel's Doctor Strange.
 
 <p align="center">
-  <img src="assets/doctor_strange_1.jpg" width="45%" alt="Doctor Strange Effect 1" />
   <img src="assets/doctor_strange_2.jpg" width="45%" alt="Doctor Strange Effect 2" />
 </p>
 
