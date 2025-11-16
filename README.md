@@ -3,7 +3,8 @@
 Real-time AR filter that renders magical portals on open palms using computer vision.
 
 <p align="center">
-  <img src="assets/doctor_strange_2.jpg" width="45%" alt="Doctor Strange Effect" />
+  <img src="assets/doctor_strange_1.jpg" width="45%" alt="Doctor Strange Portal 1" />
+  <img src="assets/doctor_strange_2.jpg" width="45%" alt="Doctor Strange Portal 2" />
 </p>
 
 ## Features
