@@ -1,8 +1,8 @@
 <div align="center">
 
-# ✨ Doctor Strange AR Filter
+# Doctor Strange AR Filter
 
-### *Harness the power of the Mystic Arts through Computer Vision*
+### Harness the power of the Mystic Arts through Computer Vision
 
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
 [![OpenCV](https://img.shields.io/badge/OpenCV-4.x-green.svg)](https://opencv.org/)
@@ -16,31 +16,31 @@
 
 ---
 
-## 🎯 Features
+## Features
 
 <table>
 <tr>
 <td width="50%">
 
-### 🖐️ Hand Tracking
+### Hand Tracking
 Real-time detection and tracking of 21 hand landmarks using MediaPipe's ML models
 
-### 🌀 Portal Rendering
+### Portal Rendering
 Dynamic magical circles with smooth rotation and scaling animations
 
-### ✨ Particle System
+### Particle System
 Mystical sparks emanating from portals and fingertips
 
 </td>
 <td width="50%">
 
-### 🎨 Energy Trails
+### Energy Trails
 Motion-based trails following hand movements
 
-### 🔮 Runic Symbols
+### Runic Symbols
 Ancient symbols orbiting each active portal
 
-### ⚡ Energy Beams
+### Energy Beams
 Connecting beam effects between dual portals
 
 </td>
@@ -49,7 +49,7 @@ Connecting beam effects between dual portals
 
 ---
 
-## 🛠️ Technical Stack
+## Technical Stack
 
 ```
 MediaPipe → Hand Landmark Detection (21 points/hand)
@@ -61,14 +61,14 @@ Portal Activation & Rendering (OpenCV affine transformations)
 Real-time Visual Effects (particles, trails, beams)
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/Rudra-Tiwari-codes/Doctor-Strange.git
-cd Doctor-Strange
+git clone https://github.com/Rudra-Tiwari-codes/Doctor-Strange..git
+cd Doctor-Strange.
 
 # Create virtual environment
 python -m venv venv
@@ -86,17 +86,17 @@ python main.py
 
 ---
 
-## 🎮 Controls
+## Controls
 
 | Action | Effect |
 |--------|--------|
-| 🖐️ **Open Palm** | Activate magical portal |
-| ✌️ **Two Palms** | Generate energy beam connection |
-| ⌨️ **Press 'q'** | Exit application |
+| Open Palm | Activate magical portal |
+| Two Palms | Generate energy beam connection |
+| Press 'q' | Exit application |
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
 Customize the experience by editing `config.json`:
 
@@ -110,7 +110,7 @@ Customize the experience by editing `config.json`:
 
 ---
 
-## 📋 Requirements
+## Requirements
 
 - **Python** 3.8 - 3.12
 - **OpenCV** 4.x
@@ -119,7 +119,7 @@ Customize the experience by editing `config.json`:
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
@@ -127,8 +127,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <div align="center">
 
-**Made with 🔮 by Rudra Tiwari**
-
-*May the Mystic Arts be with you*
+**Made by Rudra Tiwari**
 
 </div>
