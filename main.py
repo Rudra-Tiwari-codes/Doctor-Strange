@@ -9,11 +9,9 @@ import cv2 as cv
 import mediapipe as mp
 import json
 from functions import (position_data, calculate_distance, draw_line, overlay_image, 
-                       ParticleSystem, add_glow_effect, EnergyTrail,
-                       RunicSymbol, apply_mirror_dimension_effect, draw_energy_beam,
+                       ParticleSystem, EnergyTrail, RunicSymbol, draw_energy_beam,
                        SoundManager)
 import numpy as np
-import math
 
 def load_config(path: str = "config.json") -> dict:
     """Loads the configuration from a JSON file.
