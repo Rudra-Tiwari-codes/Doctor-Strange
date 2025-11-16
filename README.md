@@ -4,11 +4,6 @@
 
 ### Harness the power of the Mystic Arts through Computer Vision
 
-[![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
-[![OpenCV](https://img.shields.io/badge/OpenCV-4.x-green.svg)](https://opencv.org/)
-[![MediaPipe](https://img.shields.io/badge/MediaPipe-Hand%20Tracking-orange.svg)](https://mediapipe.dev/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-
 <img src="assets/doctor_strange_1.jpg" width="45%" alt="Portal Effect 1" />
 <img src="assets/doctor_strange_2.jpg" width="45%" alt="Portal Effect 2" />
 
