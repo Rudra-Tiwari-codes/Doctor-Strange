@@ -9,9 +9,9 @@ import cv2 as cv
 import mediapipe as mp
 import json
 from functions import (position_data, calculate_distance, draw_line, overlay_image, 
-                       ParticleSystem, add_glow_effect, detect_gesture, EnergyTrail,
+                       ParticleSystem, add_glow_effect, EnergyTrail,
                        RunicSymbol, apply_mirror_dimension_effect, draw_energy_beam,
-                       SoundManager, EnergyDisc)
+                       SoundManager)
 import numpy as np
 import math
 
@@ -49,8 +49,7 @@ def load_images(config: dict) -> tuple:
     return inner_circle, outer_circle
 
 def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particle_system, 
-                  portal_scales, energy_trails, runic_symbols, sound_manager, energy_discs, 
-                  prev_gestures, throw_cooldown):
+                  portal_scales, energy_trails, runic_symbols, sound_manager):
     """Processes the frame, applies overlays, and returns the updated frame."""
     h, w, _ = frame.shape
     rgb_frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
@@ -69,32 +68,6 @@ def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particl
             index_wrist_distance = calculate_distance(wrist, index_mcp)
             index_pinky_distance = calculate_distance(index_tip, pinky_tip)
             ratio = index_pinky_distance / index_wrist_distance
-            
-            # Detect gesture for special effects
-            gesture = detect_gesture(lm_list)
-            
-            # Initialize cooldown for new hands
-            if hand_idx not in throw_cooldown:
-                throw_cooldown[hand_idx] = 0
-            
-            # Detect throwing gesture - transition from fist to open palm
-            if hand_idx in prev_gestures:
-                if prev_gestures[hand_idx] == 'fist' and gesture == 'open' and throw_cooldown[hand_idx] <= 0:
-                    # Throw energy disc!
-                    # Calculate throw direction from wrist to middle finger
-                    dx = middle_tip[0] - wrist[0]
-                    dy = middle_tip[1] - wrist[1]
-                    distance = math.sqrt(dx**2 + dy**2)
-                    if distance > 0:
-                        vx = (dx / distance) * 15  # Speed of disc
-                        vy = (dy / distance) * 15
-                        energy_discs.append(EnergyDisc(middle_mcp[0], middle_mcp[1], vx, vy))
-                        sound_manager.play_throw()
-                        throw_cooldown[hand_idx] = 20  # Cooldown frames
-            
-            prev_gestures[hand_idx] = gesture
-            if throw_cooldown[hand_idx] > 0:
-                throw_cooldown[hand_idx] -= 1
 
             if 0.5 < ratio < 1.3:
                 fingers = [thumb_tip, index_tip, middle_tip, ring_tip, pinky_tip]
@@ -181,11 +154,6 @@ def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particl
     if len(portal_centers) == 2:
         frame = draw_energy_beam(frame, portal_centers[0], portal_centers[1])
     
-    # Update and draw all energy discs
-    energy_discs[:] = [disc for disc in energy_discs if disc.update()]
-    for disc in energy_discs:
-        disc.draw(frame)
-    
     # Update and draw all particles
     particle_system.update(frame)
 
@@ -207,11 +175,6 @@ def main():
     sound_manager = SoundManager()
     sound_manager.load_sounds()
     sound_manager.play_music()  # Start background music
-    
-    # Disc throwing system
-    energy_discs = []
-    prev_gestures = {}
-    throw_cooldown = {}
 
     try:
         while cap.isOpened():
@@ -223,8 +186,7 @@ def main():
             frame = cv.flip(frame, 1)
             frame, deg = process_frame(frame, hands, config, inner_circle, outer_circle, 
                                       deg, particle_system, portal_scales, energy_trails, 
-                                      runic_symbols, sound_manager, energy_discs, 
-                                      prev_gestures, throw_cooldown)
+                                      runic_symbols, sound_manager)
 
             cv.imshow("Image", frame)
             if cv.waitKey(1) == ord(config["keybindings"]["quit_key"]):

@@ -13,7 +13,6 @@ Real-time AR filter that renders magical portals on open palms using computer vi
 - Particle effects and energy trails
 - Runic symbols orbiting portals
 - Energy beams connecting dual portals
-- Throw energy discs with fist-to-palm gesture
 - Sound effects support (optional)
 
 ## Technical Stack
@@ -38,7 +37,6 @@ python main.py
 
 **Controls:**
 - Open palm → Activate portal
-- Fist → Open palm quickly → Throw energy disc
 - Two palms → Energy beam
 - Press 'q' → Quit
 
