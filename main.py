@@ -121,21 +121,6 @@ def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particl
                 frame = overlay_image(rotated_outer, frame, current_x1, current_y1, (current_diameter, current_diameter))
                 frame = overlay_image(rotated_inner, frame, current_x1, current_y1, (current_diameter, current_diameter))
                 
-                # Runic symbols disabled
-                # if hand_idx not in runic_symbols:
-                #     runic_symbols[hand_idx] = [
-                #         RunicSymbol(center_x, center_y, current_diameter // 2 + 20, i * math.pi / 3)
-                #         for i in range(6)
-                #     ]
-                
-                # Update and draw runic symbols
-                # for symbol in runic_symbols[hand_idx]:
-                #     symbol.center_x = center_x
-                #     symbol.center_y = center_y
-                #     symbol.radius = current_diameter // 2 + 20
-                #     symbol.update()
-                #     symbol.draw(frame)
-                
                 # Emit fewer particles for cleaner look
                 for angle in range(0, 360, 90):
                     rad = np.radians(angle)
@@ -174,6 +159,13 @@ def main():
     sound_manager = SoundManager()
     sound_manager.load_sounds()
     sound_manager.play_music()  # Start background music
+    
+    # Video recording setup
+    recording = False
+    video_writer = None
+    frame_width = int(cap.get(cv.CAP_PROP_FRAME_WIDTH))
+    frame_height = int(cap.get(cv.CAP_PROP_FRAME_HEIGHT))
+    fps = 30.0
 
     try:
         while cap.isOpened():
@@ -187,10 +179,45 @@ def main():
                                       deg, particle_system, portal_scales, energy_trails, 
                                       runic_symbols, sound_manager)
 
+            # Write frame if recording
+            if recording and video_writer is not None:
+                video_writer.write(frame)
+            
+            # Display recording status
+            if recording:
+                cv.putText(frame, "REC", (10, 30), cv.FONT_HERSHEY_SIMPLEX, 
+                          1, (0, 0, 255), 2, cv.LINE_AA)
+                cv.circle(frame, (70, 22), 8, (0, 0, 255), -1)
+
             cv.imshow("Image", frame)
-            if cv.waitKey(1) == ord(config["keybindings"]["quit_key"]):
+            key = cv.waitKey(1)
+            
+            # Quit
+            if key == ord(config["keybindings"]["quit_key"]):
                 break
+            
+            # Toggle recording with 'r' key
+            elif key == ord('r'):
+                if not recording:
+                    # Start recording
+                    from datetime import datetime
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    output_filename = f"doctor_strange_recording_{timestamp}.mp4"
+                    fourcc = cv.VideoWriter_fourcc(*'mp4v')
+                    video_writer = cv.VideoWriter(output_filename, fourcc, fps, 
+                                                  (frame_width, frame_height))
+                    recording = True
+                    print(f"Recording started: {output_filename}")
+                else:
+                    # Stop recording
+                    recording = False
+                    if video_writer is not None:
+                        video_writer.release()
+                        video_writer = None
+                    print("Recording stopped")
     finally:
+        if video_writer is not None:
+            video_writer.release()
         sound_manager.stop_music()
         cap.release()
         cv.destroyAllWindows()
