@@ -46,10 +46,6 @@ Connecting beam effects between dual portals
 
 
 
-https://github.com/user-attachments/assets/00cf43eb-a4a6-43ff-bd06-8046d5bed011
-
-
-
 
 
 
