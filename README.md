@@ -88,6 +88,7 @@ python main.py
 | Open Palm | Activate magical portal |
 | Two Palms | Generate energy beam connection |
 | Press 'q' | Exit application |
+| Press 'r' | Record |
 
 ---
 
