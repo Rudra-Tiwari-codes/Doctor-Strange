@@ -42,6 +42,17 @@ Connecting beam effects between dual portals
 </tr>
 </table>
 
+## Video Demo
+
+
+
+Uploading doctor_strange_recording_20251126_160329.mp4…
+
+
+
+
+
+
 ---
 
 ## Technical Stack
@@ -89,20 +100,6 @@ python main.py
 | Two Palms | Generate energy beam connection |
 | Press 'q' | Exit application |
 | Press 'r' | Record |
-
----
-
-## Configuration
-
-Customize the experience by editing `config.json`:
-
-```json
-{
-  "camera": { "width": 1280, "height": 720 },
-  "line_settings": { "color": [0, 140, 255] },
-  "overlay": { "rotation_degree_increment": 5 }
-}
-```
 
 ---
 
