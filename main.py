@@ -7,6 +7,7 @@ Date: November 2025
 
 import cv2 as cv
 import mediapipe as mp
+import math
 import json
 from functions import (position_data, calculate_distance, draw_line, overlay_image, 
                        ParticleSystem, EnergyTrail, RunicSymbol, draw_energy_beam,
