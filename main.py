@@ -7,8 +7,8 @@ Date: November 2025
 
 import cv2 as cv
 import mediapipe as mp
-import math
 import json
+import math
 from functions import (position_data, calculate_distance, draw_line, overlay_image, 
                        ParticleSystem, EnergyTrail, RunicSymbol, draw_energy_beam,
                        SoundManager)
@@ -121,20 +121,20 @@ def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particl
                 frame = overlay_image(rotated_outer, frame, current_x1, current_y1, (current_diameter, current_diameter))
                 frame = overlay_image(rotated_inner, frame, current_x1, current_y1, (current_diameter, current_diameter))
                 
-                # Create or update runic symbols for this portal
-                if hand_idx not in runic_symbols:
-                    runic_symbols[hand_idx] = [
-                        RunicSymbol(center_x, center_y, current_diameter // 2 + 20, i * math.pi / 3)
-                        for i in range(6)
-                    ]
+                # Runic symbols disabled
+                # if hand_idx not in runic_symbols:
+                #     runic_symbols[hand_idx] = [
+                #         RunicSymbol(center_x, center_y, current_diameter // 2 + 20, i * math.pi / 3)
+                #         for i in range(6)
+                #     ]
                 
                 # Update and draw runic symbols
-                for symbol in runic_symbols[hand_idx]:
-                    symbol.center_x = center_x
-                    symbol.center_y = center_y
-                    symbol.radius = current_diameter // 2 + 20
-                    symbol.update()
-                    symbol.draw(frame)
+                # for symbol in runic_symbols[hand_idx]:
+                #     symbol.center_x = center_x
+                #     symbol.center_y = center_y
+                #     symbol.radius = current_diameter // 2 + 20
+                #     symbol.update()
+                #     symbol.draw(frame)
                 
                 # Emit fewer particles for cleaner look
                 for angle in range(0, 360, 90):
