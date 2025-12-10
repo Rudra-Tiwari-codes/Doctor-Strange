@@ -10,7 +10,7 @@ import mediapipe as mp
 import json
 import math
 from functions import (position_data, calculate_distance, draw_line, overlay_image, 
-                       ParticleSystem, EnergyTrail, RunicSymbol, draw_energy_beam,
+                       ParticleSystem, EnergyTrail, draw_energy_beam,
                        SoundManager)
 import numpy as np
 
@@ -48,7 +48,7 @@ def load_images(config: dict) -> tuple:
     return inner_circle, outer_circle
 
 def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particle_system, 
-                  portal_scales, energy_trails, runic_symbols, sound_manager):
+                  portal_scales, energy_trails, sound_manager):
     """Processes the frame, applies overlays, and returns the updated frame."""
     h, w, _ = frame.shape
     rgb_frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
@@ -68,7 +68,7 @@ def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particl
             index_pinky_distance = calculate_distance(index_tip, pinky_tip)
             ratio = index_pinky_distance / index_wrist_distance
 
-            if 0.5 < ratio < 1.3:
+            if config["portal"]["min_ratio"] < ratio < config["portal"]["activation_ratio"]:
                 fingers = [thumb_tip, index_tip, middle_tip, ring_tip, pinky_tip]
                 
                 # Simple line drawing - consistent color
@@ -89,7 +89,7 @@ def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particl
                 energy_trails[hand_idx].add_point(middle_mcp)
                 energy_trails[hand_idx].draw(frame, line_color)
 
-            elif ratio >= 1.3:
+            elif ratio >= config["portal"]["activation_ratio"]:
                 active_portals += 1
                 center_x, center_y = middle_mcp
                 portal_centers.append((center_x, center_y))
@@ -103,10 +103,10 @@ def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particl
                 # Portal opening animation - gradually scale up
                 target_scale = 1.0
                 if hand_idx not in portal_scales:
-                    portal_scales[hand_idx] = 0.3
+                    portal_scales[hand_idx] = config["portal"]["initial_scale"]
                     sound_manager.play_portal_open()
                 
-                portal_scales[hand_idx] = min(portal_scales[hand_idx] + 0.05, target_scale)
+                portal_scales[hand_idx] = min(portal_scales[hand_idx] + config["portal"]["scale_speed"], target_scale)
                 current_diameter = int(diameter * portal_scales[hand_idx])
                 current_x1 = center_x - current_diameter // 2
                 current_y1 = center_y - current_diameter // 2
@@ -155,7 +155,6 @@ def main():
     particle_system = ParticleSystem()
     portal_scales = {}
     energy_trails = {}
-    runic_symbols = {}
     sound_manager = SoundManager()
     sound_manager.load_sounds()
     sound_manager.play_music()  # Start background music
@@ -177,7 +176,7 @@ def main():
             frame = cv.flip(frame, 1)
             frame, deg = process_frame(frame, hands, config, inner_circle, outer_circle, 
                                       deg, particle_system, portal_scales, energy_trails, 
-                                      runic_symbols, sound_manager)
+                                      sound_manager)
 
             # Write frame if recording
             if recording and video_writer is not None:
