@@ -9,9 +9,8 @@ import cv2 as cv
 import mediapipe as mp
 import json
 import math
-from functions import (position_data, calculate_distance, draw_line, overlay_image, 
-                       ParticleSystem, EnergyTrail, draw_energy_beam,
-                       SoundManager)
+from functions import (position_data, calculate_distance, overlay_image, 
+                       draw_energy_beam, SoundManager)
 import numpy as np
 
 def load_config(path: str = "config.json") -> dict:
@@ -47,8 +46,8 @@ def load_images(config: dict) -> tuple:
         raise FileNotFoundError("Failed to load one or more overlay images.")
     return inner_circle, outer_circle
 
-def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particle_system, 
-                  portal_scales, energy_trails, sound_manager):
+def process_frame(frame, hands, config, inner_circle, outer_circle, deg, 
+                  portal_scales, sound_manager):
     """Processes the frame, applies overlays, and returns the updated frame."""
     h, w, _ = frame.shape
     rgb_frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
@@ -69,25 +68,8 @@ def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particl
             ratio = index_pinky_distance / index_wrist_distance
 
             if config["portal"]["min_ratio"] < ratio < config["portal"]["activation_ratio"]:
-                fingers = [thumb_tip, index_tip, middle_tip, ring_tip, pinky_tip]
-                
-                # Simple line drawing - consistent color
-                line_color = tuple(config["line_settings"]["color"])
-                
-                for finger in fingers:
-                    frame = draw_line(frame, wrist, finger,
-                                      color=line_color,
-                                      thickness=config["line_settings"]["thickness"])
-                for i in range(len(fingers) - 1):
-                    frame = draw_line(frame, fingers[i], fingers[i + 1],
-                                      color=line_color,
-                                      thickness=config["line_settings"]["thickness"])
-                
-                # Add energy trail for movement
-                if hand_idx not in energy_trails:
-                    energy_trails[hand_idx] = EnergyTrail()
-                energy_trails[hand_idx].add_point(middle_mcp)
-                energy_trails[hand_idx].draw(frame, line_color)
+                # Hand detected but not fully open - no visual effect
+                pass
 
             elif ratio >= config["portal"]["activation_ratio"]:
                 active_portals += 1
@@ -120,26 +102,10 @@ def process_frame(frame, hands, config, inner_circle, outer_circle, deg, particl
 
                 frame = overlay_image(rotated_outer, frame, current_x1, current_y1, (current_diameter, current_diameter))
                 frame = overlay_image(rotated_inner, frame, current_x1, current_y1, (current_diameter, current_diameter))
-                
-                # Emit fewer particles for cleaner look
-                for angle in range(0, 360, 90):
-                    rad = np.radians(angle)
-                    px = int(center_x + (current_diameter // 2) * np.cos(rad))
-                    py = int(center_y + (current_diameter // 2) * np.sin(rad))
-                    particle_system.emit(px, py, 1)
-                
-                # Add energy trail
-                if hand_idx not in energy_trails:
-                    energy_trails[hand_idx] = EnergyTrail()
-                energy_trails[hand_idx].add_point(middle_mcp)
-                energy_trails[hand_idx].draw(frame)
     
     # Draw energy beam connecting two portals
     if len(portal_centers) == 2:
         frame = draw_energy_beam(frame, portal_centers[0], portal_centers[1])
-    
-    # Update and draw all particles
-    particle_system.update(frame)
 
     return frame, deg
 
@@ -151,10 +117,8 @@ def main():
     hands = mp.solutions.hands.Hands()
     deg = 0
     
-    # Initialize all tracking systems
-    particle_system = ParticleSystem()
+    # Initialize tracking systems
     portal_scales = {}
-    energy_trails = {}
     sound_manager = SoundManager()
     sound_manager.load_sounds()
     sound_manager.play_music()  # Start background music
@@ -175,8 +139,7 @@ def main():
 
             frame = cv.flip(frame, 1)
             frame, deg = process_frame(frame, hands, config, inner_circle, outer_circle, 
-                                      deg, particle_system, portal_scales, energy_trails, 
-                                      sound_manager)
+                                      deg, portal_scales, sound_manager)
 
             # Write frame if recording
             if recording and video_writer is not None:
