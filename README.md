@@ -65,8 +65,8 @@ Real-time Visual Effects (particles, trails, beams)
 
 ```bash
 # Clone the repository
-git clone https://github.com/Rudra-Tiwari-codes/Doctor-Strange..git
-cd Doctor-Strange.
+git clone https://github.com/Rudra-Tiwari-codes/Doctor-Strange.git
+cd Doctor-Strange
 
 # Create virtual environment
 python -m venv venv
