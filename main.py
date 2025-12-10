@@ -113,9 +113,19 @@ def main():
     """Main function to run the application."""
     config = load_config()
     cap = initialize_camera(config)
+    
+    # Portal theme definitions
+    themes = {
+        '1': ('Models/inner_circles/orange.png', 'Models/outer_circles/orange.png', 'Orange'),
+        '2': ('Models/inner_circles/blue.png', 'Models/outer_circles/dark_red.png', 'Blue'),
+        '3': ('Models/inner_circles/light_orange.png', 'Models/outer_circles/red.png', 'Red'),
+    }
+    current_theme = '1'
     inner_circle, outer_circle = load_images(config)
+    
     hands = mp.solutions.hands.Hands()
     deg = 0
+    theme_display_timer = 0  # For showing theme name on screen
     
     # Initialize tracking systems
     portal_scales = {}
@@ -155,6 +165,20 @@ def main():
                 cv.circle(frame, (22, 20), 8, (0, 0, 255), -1)
                 cv.putText(frame, "REC", (38, 28), cv.FONT_HERSHEY_SIMPLEX, 
                           0.7, (255, 255, 255), 2, cv.LINE_AA)
+            
+            # Display theme name when switched
+            if theme_display_timer > 0:
+                theme_name = themes[current_theme][2]
+                h, w = frame.shape[:2]
+                text_size = cv.getTextSize(theme_name, cv.FONT_HERSHEY_SIMPLEX, 1, 2)[0]
+                text_x = (w - text_size[0]) // 2
+                # Background for text
+                overlay = frame.copy()
+                cv.rectangle(overlay, (text_x - 10, h - 50), (text_x + text_size[0] + 10, h - 15), (0, 0, 0), -1)
+                cv.addWeighted(overlay, 0.6, frame, 0.4, 0, frame)
+                cv.putText(frame, theme_name, (text_x, h - 25), cv.FONT_HERSHEY_SIMPLEX, 
+                          1, (255, 255, 255), 2, cv.LINE_AA)
+                theme_display_timer -= 1
 
             cv.imshow("Image", frame)
             key = cv.waitKey(1)
@@ -182,6 +206,20 @@ def main():
                         video_writer.release()
                         video_writer = None
                     print("Recording stopped")
+            
+            # Theme switching with number keys
+            elif key in [ord('1'), ord('2'), ord('3')]:
+                theme_key = chr(key)
+                if theme_key in themes and theme_key != current_theme:
+                    inner_path, outer_path, theme_name = themes[theme_key]
+                    new_inner = cv.imread(inner_path, -1)
+                    new_outer = cv.imread(outer_path, -1)
+                    if new_inner is not None and new_outer is not None:
+                        inner_circle = new_inner
+                        outer_circle = new_outer
+                        current_theme = theme_key
+                        theme_display_timer = 60  # Show theme name for ~2 seconds
+                        print(f"Theme changed to: {theme_name}")
     finally:
         if video_writer is not None:
             video_writer.release()
