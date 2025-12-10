@@ -182,11 +182,16 @@ def main():
             if recording and video_writer is not None:
                 video_writer.write(frame)
             
-            # Display recording status
+            # Display recording status with improved styling
             if recording:
-                cv.putText(frame, "REC", (10, 30), cv.FONT_HERSHEY_SIMPLEX, 
-                          1, (0, 0, 255), 2, cv.LINE_AA)
-                cv.circle(frame, (70, 22), 8, (0, 0, 255), -1)
+                # Semi-transparent background for better visibility
+                overlay = frame.copy()
+                cv.rectangle(overlay, (5, 5), (95, 35), (0, 0, 0), -1)
+                cv.addWeighted(overlay, 0.5, frame, 0.5, 0, frame)
+                # Red recording dot and text
+                cv.circle(frame, (22, 20), 8, (0, 0, 255), -1)
+                cv.putText(frame, "REC", (38, 28), cv.FONT_HERSHEY_SIMPLEX, 
+                          0.7, (255, 255, 255), 2, cv.LINE_AA)
 
             cv.imshow("Image", frame)
             key = cv.waitKey(1)

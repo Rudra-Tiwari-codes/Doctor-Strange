@@ -43,7 +43,7 @@ Connecting beam effects between dual portals
 </table>
 
 ## Video Demo 
-[https://www.youtube.com/watch?v=HVaQI4Kzp6M]
+[Watch Demo on YouTube](https://www.youtube.com/watch?v=HVaQI4Kzp6M)
 
 ---
 

@@ -40,13 +40,35 @@ class SoundManager:
         if not self.enabled:
             return
         
+        import os
+        
+        # Load background music
         try:
-            # Try to load sounds if they exist in sounds folder
-            # Users can add: portal_open.wav, gesture.wav, throw.wav, doctor_strange_theme.mp3
-            import os
             if os.path.exists("sounds/doctor_strange_theme.mp3"):
                 pygame.mixer.music.load("sounds/doctor_strange_theme.mp3")
                 pygame.mixer.music.set_volume(0.3)
+        except (pygame.error, OSError, FileNotFoundError):
+            pass
+        
+        # Load sound effects
+        try:
+            if os.path.exists("sounds/portal_open.wav"):
+                self.portal_open_sound = pygame.mixer.Sound("sounds/portal_open.wav")
+                self.portal_open_sound.set_volume(0.5)
+        except (pygame.error, OSError, FileNotFoundError):
+            pass
+        
+        try:
+            if os.path.exists("sounds/throw.wav"):
+                self.throw_sound = pygame.mixer.Sound("sounds/throw.wav")
+                self.throw_sound.set_volume(0.5)
+        except (pygame.error, OSError, FileNotFoundError):
+            pass
+        
+        try:
+            if os.path.exists("sounds/gesture.wav"):
+                self.gesture_sound = pygame.mixer.Sound("sounds/gesture.wav")
+                self.gesture_sound.set_volume(0.5)
         except (pygame.error, OSError, FileNotFoundError):
             pass
     
