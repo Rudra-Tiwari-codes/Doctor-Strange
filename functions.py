@@ -8,6 +8,8 @@ Date: November 2025
 import cv2 as cv
 import numpy as np
 from typing import List, Tuple
+import random
+import math
 
 try:
     import pygame
