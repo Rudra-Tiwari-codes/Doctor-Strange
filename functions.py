@@ -7,9 +7,7 @@ Date: November 2025
 
 import cv2 as cv
 import numpy as np
-from typing import List, Tuple, Optional
-import random
-import math
+from typing import List, Tuple
 
 try:
     import pygame
@@ -34,7 +32,7 @@ class SoundManager:
                 self.portal_open_sound = None
                 self.gesture_sound = None
                 self.throw_sound = None
-            except:
+            except (pygame.error, OSError):
                 self.enabled = False
     
     def load_sounds(self):
@@ -49,7 +47,7 @@ class SoundManager:
             if os.path.exists("sounds/doctor_strange_theme.mp3"):
                 pygame.mixer.music.load("sounds/doctor_strange_theme.mp3")
                 pygame.mixer.music.set_volume(0.3)
-        except:
+        except (pygame.error, OSError, FileNotFoundError):
             pass
     
     def play_music(self):
@@ -58,7 +56,7 @@ class SoundManager:
             try:
                 pygame.mixer.music.play(-1)  # Loop indefinitely
                 self.music_playing = True
-            except:
+            except pygame.error:
                 pass
     
     def stop_music(self):
@@ -67,7 +65,7 @@ class SoundManager:
             try:
                 pygame.mixer.music.stop()
                 self.music_playing = False
-            except:
+            except pygame.error:
                 pass
     
     def play_portal_open(self):
@@ -75,7 +73,7 @@ class SoundManager:
         if self.enabled and self.portal_open_sound:
             try:
                 self.portal_open_sound.play()
-            except:
+            except pygame.error:
                 pass
     
     def play_throw(self):
@@ -83,7 +81,7 @@ class SoundManager:
         if self.enabled and self.throw_sound:
             try:
                 self.throw_sound.play()
-            except:
+            except pygame.error:
                 pass
     
     def play_gesture(self):
@@ -91,7 +89,7 @@ class SoundManager:
         if self.enabled and self.gesture_sound:
             try:
                 self.gesture_sound.play()
-            except:
+            except pygame.error:
                 pass
 
 
@@ -184,127 +182,6 @@ class EnergyTrail:
         self.trail_points = []
 
 
-class RunicSymbol:
-    """Animated runic symbols that orbit around portals."""
-    
-    def __init__(self, center_x: int, center_y: int, radius: int, angle_offset: float):
-        self.center_x = center_x
-        self.center_y = center_y
-        self.radius = radius
-        self.angle = angle_offset
-        self.rotation_speed = 0.05
-        self.symbol_char = random.choice(['ᚠ', 'ᚢ', 'ᚦ', 'ᚨ', 'ᚱ', 'ᚲ', 'ᚷ', 'ᚹ'])
-    
-    def update(self):
-        """Update symbol position."""
-        self.angle += self.rotation_speed
-    
-    def draw(self, frame: np.ndarray, color: Tuple[int, int, int] = (0, 180, 255)):
-        """Draw the runic symbol."""
-        x = int(self.center_x + self.radius * math.cos(self.angle))
-        y = int(self.center_y + self.radius * math.sin(self.angle))
-        
-        # Draw symbol with glow effect
-        cv.putText(frame, self.symbol_char, (x-10, y+10), 
-                  cv.FONT_HERSHEY_COMPLEX, 0.8, color, 2, cv.LINE_AA)
-        cv.putText(frame, self.symbol_char, (x-10, y+10), 
-                  cv.FONT_HERSHEY_COMPLEX, 0.8, (255, 255, 255), 1, cv.LINE_AA)
-
-
-def apply_mirror_dimension_effect(frame: np.ndarray, intensity: float = 0.5) -> np.ndarray:
-    """
-    Apply a reality-bending mirror dimension effect with kaleidoscope.
-    
-    Args:
-        frame: Input frame
-        intensity: Effect intensity (0.0 to 1.0)
-    
-    Returns:
-        Frame with mirror dimension effect applied
-    """
-    h, w = frame.shape[:2]
-    
-    # Create kaleidoscope effect by mirroring sections
-    overlay = frame.copy()
-    
-    # Divide into quadrants and create symmetry
-    half_h, half_w = h // 2, w // 2
-    
-    # Mirror each quadrant to create kaleidoscope effect
-    if half_h > 0 and half_w > 0:
-        # Top-left to top-right
-        overlay[0:half_h, half_w:w] = cv.flip(overlay[0:half_h, 0:half_w], 1)
-        # Top half to bottom half
-        overlay[half_h:h, :] = cv.flip(overlay[0:half_h, :], 0)
-    
-    # Blend with original for intensity control
-    result = cv.addWeighted(frame, 1 - intensity * 0.4, overlay, intensity * 0.4, 0)
-    
-    # Add color tint for mystical effect
-    tint = np.zeros_like(result)
-    tint[:, :] = (100, 50, 0)  # Blue/purple tint
-    result = cv.addWeighted(result, 0.9, tint, 0.1, 0)
-    
-    return result
-
-
-class EnergyDisc:
-    """Represents a thrown energy disc that moves across the screen."""
-    
-    def __init__(self, start_x: int, start_y: int, velocity_x: float, velocity_y: float, size: int = 80):
-        self.x = start_x
-        self.y = start_y
-        self.vx = velocity_x
-        self.vy = velocity_y
-        self.size = size
-        self.rotation = 0
-        self.life = 1.0
-        self.age = 0
-    
-    def update(self):
-        """Update disc position and state."""
-        self.x += self.vx
-        self.y += self.vy
-        self.rotation += 15
-        self.age += 1
-        
-        # Fade out over time
-        if self.age > 30:
-            self.life -= 0.05
-        
-        return self.life > 0 and self.x > -100 and self.x < 2000 and self.y > -100 and self.y < 2000
-    
-    def draw(self, frame: np.ndarray):
-        """Draw the energy disc on the frame."""
-        if self.life <= 0:
-            return
-        
-        h, w = frame.shape[:2]
-        
-        # Draw spinning disc with multiple layers
-        center = (int(self.x), int(self.y))
-        
-        # Outer glow
-        for i in range(3, 0, -1):
-            alpha = self.life * 0.3 * i
-            radius = int(self.size * (1 + i * 0.2) * self.life)
-            color = (0, int(150 * alpha), int(255 * alpha))
-            cv.circle(frame, center, radius, color, -1)
-        
-        # Main disc body
-        radius = int(self.size * self.life)
-        cv.circle(frame, center, radius, (0, 200, 255), -1)
-        cv.circle(frame, center, int(radius * 0.7), (100, 230, 255), -1)
-        cv.circle(frame, center, int(radius * 0.4), (255, 255, 255), -1)
-        
-        # Rotating runes/lines
-        for angle in range(0, 360, 45):
-            rad = np.radians(angle + self.rotation)
-            x1 = int(self.x + radius * 0.3 * np.cos(rad))
-            y1 = int(self.y + radius * 0.3 * np.sin(rad))
-            x2 = int(self.x + radius * 0.8 * np.cos(rad))
-            y2 = int(self.y + radius * 0.8 * np.sin(rad))
-            cv.line(frame, (x1, y1), (x2, y2), (255, 255, 255), 2, cv.LINE_AA)
 
 
 def draw_energy_beam(frame: np.ndarray, point1: Tuple[int, int], point2: Tuple[int, int], 
@@ -384,73 +261,6 @@ def draw_line(
     cv.line(frame, p1, p2, color, thickness)
     cv.line(frame, p1, p2, WHITE_COLOR, max(1, thickness // 2))
     return frame
-
-
-def add_glow_effect(frame: np.ndarray, x: int, y: int, radius: int, color: Tuple[int, int, int], intensity: float = 0.3) -> np.ndarray:
-    """
-    Add a subtle glowing aura effect around a point (Marvel-style).
-    
-    Args:
-        frame: The image/frame to add glow to
-        x: X-coordinate of glow center
-        y: Y-coordinate of glow center
-        radius: Radius of the glow effect
-        color: BGR color tuple for the glow
-        intensity: Glow intensity (0.0 to 1.0)
-    
-    Returns:
-        Modified frame with glow effect
-    """
-    overlay = frame.copy()
-    
-    # Create subtle multi-layer glow for professional look
-    for i in range(3, 0, -1):
-        alpha = intensity * 0.15 * i
-        glow_radius = int(radius * (1 + i * 0.08))
-        cv.circle(overlay, (x, y), glow_radius, color, -1)
-    
-    # Blend with original frame for subtle effect
-    cv.addWeighted(overlay, 0.25, frame, 0.75, 0, frame)
-    return frame
-
-
-def detect_gesture(lmlist: List[Tuple[int, int]]) -> str:
-    """
-    Detect specific hand gestures for different magical effects.
-    
-    Args:
-        lmlist: List of hand landmark coordinates
-    
-    Returns:
-        String representing detected gesture ('fist', 'peace', 'open', 'point', 'none')
-    """
-    if len(lmlist) < 21:
-        return 'none'
-    
-    # Calculate finger states (extended or closed)
-    fingers_up = []
-    
-    # Thumb
-    if lmlist[4][0] > lmlist[3][0]:  # Right hand
-        fingers_up.append(lmlist[4][0] > lmlist[2][0])
-    else:  # Left hand
-        fingers_up.append(lmlist[4][0] < lmlist[2][0])
-    
-    # Other fingers
-    for finger_tip, finger_pip in [(8, 6), (12, 10), (16, 14), (20, 18)]:
-        fingers_up.append(lmlist[finger_tip][1] < lmlist[finger_pip][1])
-    
-    # Gesture detection
-    if sum(fingers_up) == 0:
-        return 'fist'
-    elif fingers_up == [False, True, True, False, False]:
-        return 'peace'
-    elif sum(fingers_up) >= 4:
-        return 'open'
-    elif fingers_up == [False, True, False, False, False]:
-        return 'point'
-    
-    return 'partial'
 
 
 def overlay_image(
